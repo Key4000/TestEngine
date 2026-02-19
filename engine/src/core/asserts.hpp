@@ -16,7 +16,7 @@
 //2.доп.сообщение msg
 //3.имя файла name
 //4.номер строки line
-TE_API void te_assert_fail(const char* expr, const char* msg, const char* name,i32 line);
+TE_API void assert_fail(const char* expr, const char* msg, const char* name,i32 line);
 
 /*
 *  Вспомогательные
@@ -42,7 +42,7 @@ TE_API void te_assert_fail(const char* expr, const char* msg, const char* name,i
 #define TE_ASSERT(expr) \
     do { \
         if(!(expr)) { \
-            te_assert_fail(#expr, "", __FILE__, __LINE__); \
+            assert_fail(#expr, "", __FILE__, __LINE__); \
             debugBreak(); \
         } \
     } while(0)
@@ -51,7 +51,7 @@ TE_API void te_assert_fail(const char* expr, const char* msg, const char* name,i
 #define TE_ASSERT_MSG(expr, msg) \
     do { \
         if(!(expr)) { \
-            te_assert_fail(#expr, msg, __FILE__, __LINE__); \
+            assert_fail(#expr, msg, __FILE__, __LINE__); \
             debugBreak(); \
         } \
     } while(0)
@@ -66,7 +66,7 @@ TE_API void te_assert_fail(const char* expr, const char* msg, const char* name,i
     #define TE_ASSERT_DEBUG(expr) \
         do { \
             if(!(expr)) { \
-                te_assert_fail(#expr, "", __FILE__, __LINE__); \
+                assert_fail(#expr, "", __FILE__, __LINE__); \
                 debugBreak(); \
             } \
         } while(0)
