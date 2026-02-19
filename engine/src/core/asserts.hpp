@@ -8,15 +8,14 @@
 
 #include <defines.hpp>
 /*
-*  Вспомогательные функции
+*  функция обработки условий(asserts)(реализация лежит в logger.cpp для доступа к системе логирования)
 */
 
-//функция обработки условий(asserts)
-//принимает:1.строку с выражением expr
-//2.доп.сообщение msg
-//3.имя файла name
-//4.номер строки line
-TE_API void assert_fail(const char* expr, const char* msg, const char* name,i32 line);
+// expression — строковое представление выражения, которое вызвало сбой.
+// message — дополнительное сообщение о причине сбоя.
+// file — имя файла, где произошло нарушение.
+// line — строка, на которой произошёл сбой.
+TE_API void te_assert_fail(const char* expr, const char* msg, const char* name, i32 line);
 
 /*
 *  Вспомогательные
@@ -42,7 +41,7 @@ TE_API void assert_fail(const char* expr, const char* msg, const char* name,i32 
 #define TE_ASSERT(expr) \
     do { \
         if(!(expr)) { \
-            assert_fail(#expr, "", __FILE__, __LINE__); \
+            te_assert_fail(#expr, "", __FILE__, __LINE__); \
             debugBreak(); \
         } \
     } while(0)
@@ -51,7 +50,7 @@ TE_API void assert_fail(const char* expr, const char* msg, const char* name,i32 
 #define TE_ASSERT_MSG(expr, msg) \
     do { \
         if(!(expr)) { \
-            assert_fail(#expr, msg, __FILE__, __LINE__); \
+            te_assert_fail(#expr, msg, __FILE__, __LINE__); \
             debugBreak(); \
         } \
     } while(0)
@@ -66,7 +65,7 @@ TE_API void assert_fail(const char* expr, const char* msg, const char* name,i32 
     #define TE_ASSERT_DEBUG(expr) \
         do { \
             if(!(expr)) { \
-                assert_fail(#expr, "", __FILE__, __LINE__); \
+                te_assert_fail(#expr, "", __FILE__, __LINE__); \
                 debugBreak(); \
             } \
         } while(0)

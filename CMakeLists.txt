@@ -55,61 +55,24 @@ endif()
 # ФЛАГИ КОМПИЛЯТОРА
 # ---------------------------------------------------------------------
 
-# Общие флаги для всех компиляторов
-add_compile_options(
-    $<$<CONFIG:Debug>:-O0 -g>          # Отладка: без оптимизаций, с символами
-    $<$<CONFIG:Release>:-O3 -DNDEBUG>  # Релиз: агрессивно быстро
-)
-
-
-# Флаги для Clang/GCC
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(
-        -Wall                       # Основные предупреждения
-        -Wextra                     # Дополнительные
-        -Wno-unused-parameter       # Иногда полезно отключать (для колбэков)        
-        -Werror=return-type         # Забыли return — ошибка
-        -Werror=unused-result       # Игнорирование результата — ошибка
-        -fno-omit-frame-pointer     # Для профилировщиков
-    )
-    
-    # Опциональный педантичный режим
-    if(ENABLE_PEDANTIC)
-        add_compile_options(-Wpedantic)
-        message(STATUS "📏 Педантичный режим ВКЛЮЧЕН")
-    endif()
-    
-    # ОПЦИЯ -Werror (ДОБАВЛЯЕМ СЮДА)
-    if(ENABLE_WERROR)
-        add_compile_options(-Werror)
-        message(STATUS "⚠️  Режим Werror ВКЛЮЧЕН — предупреждения станут ошибками")
-    else()
-        message(STATUS "🔧 Режим Werror ВЫКЛЮЧЕН (обычная разработка)")
-    endif()
-    
-    # Санитайзеры (включаются опцией)
-    if(USE_SANITIZER)
-        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
-        add_link_options(-fsanitize=address,undefined)
-        message(STATUS "🛡️ Санитайзеры ВКЛЮЧЕНЫ (производительность снижена)")
-    endif() 
-    
-endif()
-
-# Флаги для MSVC
+# Устанавливаем базовые флаги в зависимости от компилятора и конфигурации
 if(MSVC)
+    # Для MSVC
+    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG")
+    # Дополнительные предупреждения
+    add_compile_options(/W4 /wd4100 /utf-8)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    # Для Clang/GCC
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
     add_compile_options(
-        /W4      # Уровень предупреждений 4 
-        /wd4100  # Отключаем "unused parameter" (аналог -Wno-unused-parameter)
-        /utf-8   # Поддержка UTF-8
+        -Wall -Wextra
+        -Wno-unused-parameter
+        -Werror=return-type
+        -Werror=unused-result
+        -fno-omit-frame-pointer
     )
-    
-    # /WX — аналог -Werror для MSVC
-    if(ENABLE_WERROR)
-        add_compile_options(/WX)
-        message(STATUS "⚠️  MSVC: /WX включен — предупреждения как ошибки")
-    endif()
-
 endif()
 
 # ---------------------------------------------------------------------
@@ -126,26 +89,26 @@ find_package(Vulkan REQUIRED)
 message(STATUS "✅ Vulkan найден: ${Vulkan_INCLUDE_DIRS}")
 
 # Dear ImGui (подключаем как внешний проект)
-add_subdirectory(${EXTERNAL_DIR}/imgui)
+# add_subdirectory(${EXTERNAL_DIR}/imgui)
 
 # stb_image (просто добавляем пути, это header-only)
-add_library(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE ${EXTERNAL_DIR}/stb)
+ add_library(stb_image INTERFACE)
+ target_include_directories(stb_image INTERFACE ${EXTERNAL_DIR}/stb)
 
 # tinyobjloader (если решим использовать его)
-add_subdirectory(${EXTERNAL_DIR}/tinyobjloader)
+# add_subdirectory(${EXTERNAL_DIR}/tinyobjloader)
 
 # Опционально: Jolt Physics
-if(USE_JOLT_PHYSICS)
-    add_subdirectory(${EXTERNAL_DIR}/jolt)
-    message(STATUS "⚙️ Jolt Physics подключена")
-endif()
+#if(USE_JOLT_PHYSICS)
+    # add_subdirectory(${EXTERNAL_DIR}/jolt)
+    # message(STATUS "⚙️ Jolt Physics подключена")
+# endif()
 
 # Опционально: SoLoud
-if(USE_SOLOUD)
-    add_subdirectory(${EXTERNAL_DIR}/soloud)
-    message(STATUS "🔊 SoLoud подключён")
-endif()
+# if(USE_SOLOUD)
+   # add_subdirectory(${EXTERNAL_DIR}/soloud)
+   # message(STATUS "🔊 SoLoud подключён")
+# endif()
 
 
 # ---------------------------------------------------------------------

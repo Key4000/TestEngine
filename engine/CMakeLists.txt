@@ -54,8 +54,6 @@ target_link_libraries(${PROJECT_NAME}
 )
 
     
-
-
 # ---------------------------------------------------------------------
 # ПОДКЛЮЧАЕМ ПУТИ К ЗАГОЛОВКАМ 
 # ---------------------------------------------------------------------
@@ -83,6 +81,11 @@ target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         $<$<BOOL:${BUILD_SHARED_LIBS}>:ENGINE_BUILD_DLL>
 )
+
+#определение ENGINE_SHARED
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC ENGINE_SHARED)
+endif()
 
 # ---------------------------------------------------------------------
 # ОТЛАДОЧНЫЙ ВЫВОД

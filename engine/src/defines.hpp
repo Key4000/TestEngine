@@ -54,14 +54,14 @@ static_assert(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 * Экспорт/импорт символов для 
 * динамической библиотеки
 */
-#ifdef _WIN32
-  #ifdef ENGINE_BUILD_DLL
-    #define TE_API __declspec(dllexport)
-  #else
-    #define TE_API __declspec(dllimport)
-  #endif
+#if defined(_WIN32) && defined(ENGINE_SHARED)
+    #ifdef ENGINE_BUILD_DLL
+        #define TE_API __declspec(dllexport)
+    #else
+        #define TE_API __declspec(dllimport)
+    #endif
 #else
-  #define TE_API 
+    #define TE_API
 #endif
 
 /*

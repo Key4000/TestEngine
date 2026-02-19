@@ -5,26 +5,23 @@
 *  3. вспомогательная функция для приведения уровня в строку 
 *  4. основная функция логирования
 */
-
 #include <core/logger.hpp>
 #include <cstdio>   // fprintf, vfprintf, stderr  
 #include <cstdarg>  // va_list, va_start, va_end
 
+
 /*
 *  run-time фильтрация 
 */
-
-//
 LogLevel glob_min_log_level = LogLevel::TRACE;
-
 void te_set_log_level(LogLevel level){
   glob_min_log_level = level;
 }
 
+
 /*
 * вспомогательная функция для приведения уровня в строку 
 */
-
 static const char* level_to_string(LogLevel level)
 {
   switch(level)
@@ -63,7 +60,6 @@ void te_log_write(LogLevel level, const char* format, ...)
 /*
 * функция инициализации и завершения логировария 
 */ 
-
 b8 initialize_logging()
 {
   //TODO: дописать позже
@@ -75,3 +71,14 @@ void shutdown_logging()
   //TODO: дописать позже
 }
 
+/*
+* функция обработки условий(asserts)(обьявление в asserts.hpp)
+*/
+void te_assert_fail(const char* expr, const char* msg, const char* name, i32 line)
+{
+  // Сообщение об ошибке будет выведено в лог с уровнем LOG_LEVEL_FATAL, что
+  // означает фатальную ошибку.
+  te_log_write(LogLevel::FATAL,
+            "Assertion Failure: %s, message: '%s', in file: %s, line: %d\n",
+            expr, msg, name, line);
+}
