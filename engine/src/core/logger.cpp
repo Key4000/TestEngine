@@ -13,7 +13,7 @@
 /*
 *  run-time фильтрация 
 */
-LogLevel glob_min_log_level = LogLevel::TRACE;
+LogLevel glob_min_log_level = LogLevel::WARN;
 void te_set_log_level(LogLevel level){
   glob_min_log_level = level;
 }
@@ -54,19 +54,19 @@ void te_log_write(LogLevel level, const char* format, ...)
   va_end(args);
 
   fprintf(stderr, "\n");
-  // fflush(stderr); // опционально для немедленного вывода
+  //fflush(stderr); // опционально для немедленного вывода
 }
 
 /*
 * функция инициализации и завершения логировария 
 */ 
-b8 initialize_logging()
+b8 log_init()
 {
   //TODO: дописать позже
   return true;
 }
 
-void shutdown_logging()
+void log_shutdown()
 {
   //TODO: дописать позже
 }

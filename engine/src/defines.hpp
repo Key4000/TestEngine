@@ -49,13 +49,13 @@ static_assert(sizeof(i64) == 8, "Expected i64 to be 8 bytes.");
 
 static_assert(sizeof(f32) == 4, "Expected f32 to be 4 bytes.");
 static_assert(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
-
+}
 /*
 * Экспорт/импорт символов для 
 * динамической библиотеки
 */
-#if defined(_WIN32) && defined(ENGINE_SHARED)
-    #ifdef ENGINE_BUILD_DLL
+#if defined(_WIN32)
+    #ifdef D_TE_EXPORT
         #define TE_API __declspec(dllexport)
     #else
         #define TE_API __declspec(dllimport)

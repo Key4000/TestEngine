@@ -31,9 +31,10 @@ TE_API void te_set_log_level(LogLevel level);
 
 TE_API void te_log_write(LogLevel level, const char* format, ...);
 
-b8 initialize_logging();
-void shutdown_logging();
+b8 log_init();
+void log_shutdown();
 
+}
 // -------------------- Конфигурация включения уровней --------------------
 /*
 * compile-time фильтрация - 
@@ -45,8 +46,6 @@ void shutdown_logging();
 * чтобы переопределить значения по 
 * умолчанию.
 */
-
-
 #ifndef LOG_TRACE_ENABLED
 #define LOG_TRACE_ENABLED 1
 #endif
