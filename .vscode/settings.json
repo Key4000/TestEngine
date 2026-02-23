@@ -48,7 +48,6 @@
       "isWholeLine": false,
    },
    "files.associations": {
-      "test.h": "c",
       "vulkan.h": "c",
       "vulkan_core.h": "c",
       "vk_platform.h": "c",
@@ -56,7 +55,7 @@
       "typeinfo": "c",
       "windowsx.h": "c",
       "vulkan_platform.h": "c",
-      "renderer_frontend.h": "c", 
+      "renderer_frontend.h": "c",
       "iosfwd": "c"
    },
    "C_Cpp.default.compilerPath": "E:/Programing/LLVM/bin/clang.exe"

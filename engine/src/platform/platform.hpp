@@ -111,4 +111,3 @@ f64 platform_get_absolute_time();
 */
 void platform_sleep(u64 ms);
 
-}
