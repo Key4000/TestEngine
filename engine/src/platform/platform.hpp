@@ -11,23 +11,23 @@
 /*
 * состояние платформы
 */
-typedef struct platform_state
+struct platform_state
 {
   void* internal_state;  //скрытый указатель на внутреннее состояние , определим его в .cpp
-}platform_state;
+};
 /*
 * структура данных для создания окна 
 * (координаты окна x , y)
 * (размер окна)
 */
-typedef struct window_data
+struct window_data
 {
   const char* app_name; //имя приложения
   i32 x;                //координаты
   i32 y;                //окна 
   i32 width;            //размеры 
   i32 height;           //окна
-}window_data;
+};
 /*
 * Инициализация
 * (состояние платформы)

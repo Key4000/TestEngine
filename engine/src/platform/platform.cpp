@@ -31,7 +31,7 @@ b8 platform_init(platform_state* p_state, window_data* w_data) {
      */
     p_state->internal_state = malloc(sizeof(internal_state));
     internal_state* i_state = (internal_state*)p_state->internal_state;
-    i_state->h_instance = GetModuleHandleA(0);
+    i_state->h_instance = GetModuleHandleA(nullptr);
     /*
      * создаем окно
      */
@@ -56,14 +56,14 @@ void platform_shutdown(platform_state* p_state) {
      */
     if (state->hwnd) {
         DestroyWindow(state->hwnd);
-        state->hwnd = 0;
+        state->hwnd = nullptr;
     }
 };
 
 b8 platform_pump_messages(platform_state* p_state) {
     MSG message;
 
-    while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
+    while (PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE)) {
         // Преобразует сообщения клавиатуры
         // WM_KEYDOWN/WM_KEYUP → WM_CHAR
         TranslateMessage(&message);
@@ -101,9 +101,9 @@ void platform_console_write(const char* message, u8 color) {
     SetConsoleTextAttribute(console_handle, levels[color]);
     OutputDebugStringA(message);
     u64 length = strlen(message);
-    LPDWORD number_written = 0;
+    LPDWORD number_written = nullptr;
 
-    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
+    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, nullptr);
 }
 void platform_console_write_error(const char* message, u8 color) {
     HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
@@ -112,9 +112,9 @@ void platform_console_write_error(const char* message, u8 color) {
     SetConsoleTextAttribute(console_handle, levels[color]);
     OutputDebugStringA(message);
     u64 length = strlen(message);
-    LPDWORD number_written = 0;
+    LPDWORD number_written = nullptr;
 
-    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
+    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, nullptr);
 }
 //------------------------------------
 //  Функции для работы со временем
@@ -137,7 +137,6 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
      */
     HICON icon = LoadIcon(i_state->h_instance, IDI_APPLICATION);
     WNDCLASSA wc;
-    // TODO: 0 на nullptr?
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = win32_process_message;
@@ -145,12 +144,11 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
     wc.cbWndExtra = 0;
     wc.hInstance = i_state->h_instance;
     wc.hIcon = icon;
-    // TODO: NULL на nullptr?
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = NULL;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hbrBackground = nullptr;
     wc.lpszClassName = "te_window_class";
     if (!RegisterClassA(&wc)) {
-        MessageBoxA(0, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK);
+        MessageBoxA(nullptr, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK);
         return false;
     }
     /*
@@ -183,9 +181,9 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
         window_ex_style, "te_window_class", w_data->app_name,
         window_style, window_x, window_y,
         window_width, window_height,
-        0, 0, i_state->h_instance, 0);
-    if (handle == 0) {
-        MessageBoxA(NULL, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
+        nullptr, nullptr, i_state->h_instance, nullptr);
+    if (handle == nullptr) {
+        MessageBoxA(nullptr, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
         TE_LOG_FATAL("Window creation failed!");
         return false;
     } else {
