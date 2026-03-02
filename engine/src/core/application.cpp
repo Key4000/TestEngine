@@ -6,6 +6,8 @@
 #include <platform/platform.hpp>
 #include <core/logger.hpp>
 #include <game_interface.hpp>
+#include <core/te_memory.hpp>
+#include <string.h>
 
 //------------------------------------
 struct Application::ApplicationState {
@@ -22,7 +24,7 @@ Application::Application(Game* game) {
     /*
      * Создаем состояние
      */
-    app_state = new ApplicationState();
+    app_state = static_cast<ApplicationState*>(te_memory_allocate(sizeof(ApplicationState), MEMORY_TAG_APPLICATION));
     app_state->game_inst = game;
     /*
      * Подготовка данных окна
@@ -68,7 +70,7 @@ Application::Application(Game* game) {
 Application::~Application() {
     if (app_state) {
         platform_shutdown(&app_state->platform);
-        delete app_state;
+        te_memory_free(app_state, sizeof(ApplicationState), MEMORY_TAG_APPLICATION);
     }
 }
 //------------------------------------
@@ -77,6 +79,9 @@ b8 Application::run() {
         TE_LOG_ERROR("Application не инициализирован: file->application.cpp,func->run");
         return false;
     }
+    char* memory_stats = get_memory_usage_str();
+    TE_LOG_INFO(memory_stats);
+    te_memory_free(memory_stats, strlen(memory_stats) + 1, MEMORY_TAG_STRING);
     /*
      * главный цикл
      */

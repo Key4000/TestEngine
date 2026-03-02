@@ -71,7 +71,7 @@ TE_API void* platform_zero_memory(void* block, u64 size);
  * (блок откуда копируем)
  * (размер)
  */
-void* platform_copy_memory(void* dest, void* source, u64 size);
+void* platform_copy_memory(void* dest, const void* source, u64 size);
 /*
  * заполняет блок памяти данными
  * (блок , который заполняем)

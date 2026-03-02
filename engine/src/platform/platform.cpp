@@ -5,6 +5,7 @@
 
 #include <platform/platform.hpp>
 #include <core/logger.hpp>
+#include <core/te_memory.hpp>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -29,13 +30,14 @@ b8 platform_init(platform_state* p_state, window_data* w_data) {
     /*
      *
      */
-    p_state->internal_state = malloc(sizeof(internal_state));
+    p_state->internal_state = te_memory_allocate(sizeof(internal_state), MEMORY_TAG_APPLICATION);
     internal_state* i_state = (internal_state*)p_state->internal_state;
     i_state->h_instance = GetModuleHandleA(nullptr);
     /*
      * создаем окно
      */
     if (!platform_create_window(w_data, i_state)) {
+        te_memory_free(i_state, sizeof(internal_state), MEMORY_TAG_APPLICATION);
         return false;
     }
     /*
@@ -58,6 +60,10 @@ void platform_shutdown(platform_state* p_state) {
         DestroyWindow(state->hwnd);
         state->hwnd = nullptr;
     }
+    /*
+     * освобождаем память
+     */
+    te_memory_free(state, sizeof(internal_state), MEMORY_TAG_APPLICATION);
 };
 
 b8 platform_pump_messages(platform_state* p_state) {
@@ -105,16 +111,16 @@ void platform_console_write(const char* message, u8 color) {
 
     WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, nullptr);
 }
-void platform_console_write_error(const char* message, u8 color) {
+void platform_console_write_error(const char* error_message, u8 color) {
     HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
     static u8 levels[6] = {64, 4, 6, 2, 1, 8};
 
     SetConsoleTextAttribute(console_handle, levels[color]);
-    OutputDebugStringA(message);
-    u64 length = strlen(message);
+    OutputDebugStringA(error_message);
+    u64 length = strlen(error_message);
     LPDWORD number_written = nullptr;
 
-    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, nullptr);
+    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), error_message, (DWORD)length, number_written, nullptr);
 }
 //------------------------------------
 //  Функции для работы со временем
