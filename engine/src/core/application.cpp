@@ -37,7 +37,7 @@ Application::Application(Game* game) {
      *  Инициализируем платформу
      */
     if (!platform_init(&app_state->platform, &w_data)) {
-        TE_LOG_FATAL("Platform не удалось инициализировать");
+        TE_LOG_FATAL("Platform не удалось инициализировать: file->application.cpp, func->конструктор класса Application");
         delete app_state;
         app_state = nullptr;
         return;
@@ -46,7 +46,7 @@ Application::Application(Game* game) {
      * Инициализация игры
      */
     if (!app_state->game_inst->initialize(app_state->game_inst)) {
-        TE_LOG_FATAL("Game не удалось иниц ализировать");
+        TE_LOG_FATAL("Game не удалось иниц ализировать: file->application.cpp, func->конструктор класса Application");
         delete app_state;
         app_state = nullptr;
         return;
@@ -74,7 +74,7 @@ Application::~Application() {
 //------------------------------------
 b8 Application::run() {
     if (!app_state) {
-        TE_LOG_ERROR("Application не инициализирован, file->application.cpp,func->run");
+        TE_LOG_ERROR("Application не инициализирован: file->application.cpp,func->run");
         return false;
     }
     /*
@@ -98,12 +98,12 @@ b8 Application::run() {
          */
         if (!app_state->is_suspended) {
             if (!app_state->game_inst->update(app_state->game_inst, delta_time)) {
-                TE_LOG_FATAL("Обновление игры прошло неудачно, останавливаем главный цикл ");
+                TE_LOG_FATAL("Обновление игры прошло неудачно, останавливаем главный цикл: file->application.cpp, func->run");
                 app_state->is_running = false;
                 break;
             }
             if (!app_state->game_inst->render(app_state->game_inst, delta_time)) {
-                TE_LOG_FATAL("Рендер игры произошел неудачно , останавливаем главный цикл");
+                TE_LOG_FATAL("Рендер игры произошел неудачно , останавливаем главный цикл: file->application.cpp, func->run");
                 app_state->is_running = false;
                 break;
             }

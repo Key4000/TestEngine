@@ -148,7 +148,7 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
     wc.hbrBackground = nullptr;
     wc.lpszClassName = "te_window_class";
     if (!RegisterClassA(&wc)) {
-        MessageBoxA(nullptr, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK);
+        MessageBoxA(nullptr, "Окно неудалось зарегестрировать: file->platform.cpp, func->platform_create_window", "Error", MB_ICONEXCLAMATION | MB_OK);
         return false;
     }
     /*
@@ -183,8 +183,8 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
         window_width, window_height,
         nullptr, nullptr, i_state->h_instance, nullptr);
     if (handle == nullptr) {
-        MessageBoxA(nullptr, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
-        TE_LOG_FATAL("Window creation failed!");
+        MessageBoxA(nullptr, "Неудалось создать окно!: file->platform.cpp, func->platform_create_window", "Error!", MB_ICONEXCLAMATION | MB_OK);
+        TE_LOG_FATAL("Неудалось создать окно!: file->platform.cpp, func->platform_create_window");
         return false;
     } else {
         i_state->hwnd = handle;
