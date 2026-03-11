@@ -1,0 +1,17 @@
+/**
+ * @mainpage TestEngine Documentation
+ *
+ * @section intro Введение
+ * TestEngine — игровой движок, написанный на C++17 с использованием Vulkan.
+ * Проект создаётся в образовательных целях и для портфолио, вдохновлён архитектурой Kohi Engine.
+ *
+ * @section structure Структура проекта
+ * - @subpage memory_system     – подсистема управления памятью
+ * - @subpage event_system      – система событий (издатель-подписчик)
+ * - @subpage darray            – динамический массив (контейнер)
+ * - @subpage platform_layer    – платформенный слой (Windows)
+ * - @subpage application_layer – слой приложения
+ *
+ * @section license Лицензия
+ * (укажи, если есть)
+ */

@@ -1,48 +1,95 @@
-/*
- * Реализация интерфейса платформенного
- * слоя
+/**
+ * @file platform.cpp
+ * @brief Реализация платформенного слоя для Windows.
+ *
+ * Содержит конкретную реализацию функций, объявленных в platform.hpp,
+ * включая создание окна, обработку сообщений, управление памятью,
+ * консольный вывод и работу с таймером.
  */
 
 #include <platform/platform.hpp>
 #include <core/logger.hpp>
 #include <core/te_memory.hpp>
-
+#include <core/event.hpp>
 #include <windows.h>
 #include <windowsx.h>
 #include <stdlib.h>
 
+//==============================================================================
+// Внутренние структуры и переменные
+//==============================================================================
+
+/**
+ * @struct internal_state
+ * @brief Внутреннее состояние платформы (скрыто от заголовочного файла).
+ */
 typedef struct internal_state {
-    HINSTANCE h_instance;  // экземпляр приложения
-    HWND hwnd;             // дескриптор окна
+    HINSTANCE h_instance; /**< Дескриптор экземпляра приложения (HINSTANCE). */
+    HWND hwnd;            /**< Дескриптор созданного окна. */
 } internal_state;
 
-static f64 clock_frequency;  // частота таймера
+/**
+ * @var clock_frequency
+ * @brief Частота таймера QueryPerformanceCounter (количество тиков в секунду).
+ * @note Инвертированное значение, используется для пересчёта тиков в секунды.
+ */
+static f64 clock_frequency;
+
+/**
+ * @var start_time
+ * @brief Начальное значение счётчика производительности (для точки отсчёта).
+ */
 static LARGE_INTEGER start_time;
 
+//==============================================================================
+// Вспомогательные функции (объявлены в этом файле)
+//==============================================================================
+
+/**
+ * @brief Создаёт окно приложения (вспомогательная функция).
+ * @param w_data Параметры окна (размеры, заголовок).
+ * @param i_state Внутреннее состояние, в которое будет сохранён HWND.
+ * @return true при успешном создании окна, false при ошибке.
+ */
 b8 platform_create_window(window_data* w_data, internal_state* i_state);
-// оконная процедура(это callback которую windows вызывает на каждое сообщение для окна
+
+/**
+ * @brief Оконная процедура (callback, вызываемый Windows для сообщений окна).
+ * @param hwnd   Дескриптор окна.
+ * @param msg    Код сообщения.
+ * @param w_param Дополнительная информация (зависит от msg).
+ * @param l_param Дополнительная информация (зависит от msg).
+ * @return Результат обработки сообщения (обычно 0, если обработано).
+ */
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
 
-//------------------------------------
-//     Основные функции
-//------------------------------------
+//==============================================================================
+// Основные функции (реализация интерфейса из platform.hpp)
+//==============================================================================
+
 b8 platform_init(platform_state* p_state, window_data* w_data) {
-    /*
+    /**
+     * @brief Инициализирует платформенный слой.
+     * @param p_state Указатель на состояние платформы (будет заполнено).
+     * @param w_data  Параметры окна.
+     * @return true при успехе, false при ошибке.
      *
+     * Алгоритм:
+     * 1. Выделить память под internal_state (через te_memory_allocate).
+     * 2. Получить HINSTANCE через GetModuleHandleA.
+     * 3. Создать окно через platform_create_window.
+     * 4. Инициализировать таймер (QueryPerformanceFrequency/Counter).
+     * 5. При ошибке создания окна освободить выделенную память.
      */
     p_state->internal_state = te_memory_allocate(sizeof(internal_state), MEMORY_TAG_APPLICATION);
     internal_state* i_state = (internal_state*)p_state->internal_state;
     i_state->h_instance = GetModuleHandleA(nullptr);
-    /*
-     * создаем окно
-     */
+
     if (!platform_create_window(w_data, i_state)) {
         te_memory_free(i_state, sizeof(internal_state), MEMORY_TAG_APPLICATION);
         return false;
     }
-    /*
-     * инициализация таймера
-     */
+
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     clock_frequency = 1.0 / (f64)frequency.QuadPart;
@@ -52,95 +99,178 @@ b8 platform_init(platform_state* p_state, window_data* w_data) {
 }
 
 void platform_shutdown(platform_state* p_state) {
-    internal_state* state = (internal_state*)p_state->internal_state;
-    /*
-     * удаляем окно
+    /**
+     * @brief Завершает работу платформенного слоя.
+     * @param p_state Указатель на состояние платформы.
+     *
+     * Уничтожает окно (DestroyWindow) и освобождает память внутреннего состояния.
      */
+    internal_state* state = (internal_state*)p_state->internal_state;
     if (state->hwnd) {
         DestroyWindow(state->hwnd);
         state->hwnd = nullptr;
     }
-    /*
-     * освобождаем память
-     */
     te_memory_free(state, sizeof(internal_state), MEMORY_TAG_APPLICATION);
-};
+}
 
 b8 platform_pump_messages(platform_state* p_state) {
+    /**
+     * @brief Обрабатывает все ожидающие сообщения от Windows.
+     * @param p_state Указатель на состояние (не используется).
+     * @return true (всегда, так как окно не закрыто; при получении WM_QUIT цикл прервётся иначе).
+     *
+     * Использует PeekMessage для неблокирующей обработки очереди сообщений.
+     * TranslateMessage и DispatchMessage передают сообщения в оконную процедуру.
+     */
     MSG message;
-
     while (PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE)) {
-        // Преобразует сообщения клавиатуры
-        // WM_KEYDOWN/WM_KEYUP → WM_CHAR
         TranslateMessage(&message);
-        // передает сообщение в вашу оконную процедуру(win32_procces_message)
         DispatchMessageA(&message);
     }
-
     return true;
-};
-//------------------------------------
-//     Функции управления памяти
-//------------------------------------
+}
+
+//==============================================================================
+// Функции управления памятью (низкоуровневые обёртки)
+//==============================================================================
+
 void* platform_allocate_memory(u64 size, b8 aligned) {
+    /**
+     * @brief Выделяет память через malloc.
+     * @param size Размер в байтах.
+     * @param aligned Флаг выравнивания (игнорируется).
+     * @return Указатель на выделенный блок или NULL.
+     */
     return malloc(size);
 }
+
 void platform_free_memory(void* block, b8 aligned) {
+    /**
+     * @brief Освобождает память через free.
+     * @param block Указатель на блок.
+     * @param aligned Флаг выравнивания (игнорируется).
+     */
     free(block);
 }
+
 void* platform_zero_memory(void* block, u64 size) {
+    /**
+     * @brief Заполняет блок нулями через memset.
+     * @param block Указатель на блок.
+     * @param size Размер в байтах.
+     * @return Указатель на block.
+     */
     return memset(block, 0, size);
 }
+
 void* platform_copy_memory(void* dest, const void* source, u64 size) {
+    /**
+     * @brief Копирует память через memcpy (без перекрытия).
+     * @param dest   Целевой блок.
+     * @param source Исходный блок.
+     * @param size   Количество байт.
+     * @return Указатель на dest.
+     */
     return memcpy(dest, source, size);
 }
+
 void* platform_set_memory(void* dest, i32 value, u64 size) {
+    /**
+     * @brief Заполняет блок памяти заданным значением через memset.
+     * @param dest  Целевой блок.
+     * @param value Значение (конвертируется в unsigned char).
+     * @param size  Размер блока.
+     * @return Указатель на dest.
+     */
     return memset(dest, value, size);
 }
-//------------------------------------
-//   Функции для работы с консолью
-//------------------------------------
-void platform_console_write(const char* message, u8 color) {
-    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    static u8 levels[6] = {64, 4, 6, 2, 1, 8};
 
+void* platform_move_memory(void* dest, const void* source, u64 size) {
+    /**
+     * @brief Копирует память с учётом перекрытия через memmove.
+     * @param dest   Целевой блок.
+     * @param source Исходный блок.
+     * @param size   Количество байт.
+     * @return Указатель на dest.
+     */
+    return memmove(dest, source, size);
+}
+
+//==============================================================================
+// Функции для работы с консолью
+//==============================================================================
+
+void platform_console_write(const char* message, u8 color) {
+    /**
+     * @brief Выводит сообщение в стандартный вывод с цветом.
+     * @param message Строка для вывода.
+     * @param color   Индекс цвета (0-5), соответствующий уровню логирования.
+     */
+    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    static u8 levels[6] = {64, 4, 6, 2, 1, 8};  // Массив атрибутов цвета консоли.
     SetConsoleTextAttribute(console_handle, levels[color]);
     OutputDebugStringA(message);
     u64 length = strlen(message);
     LPDWORD number_written = nullptr;
-
-    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, nullptr);
+    WriteConsoleA(console_handle, message, (DWORD)length, number_written, nullptr);
 }
+
 void platform_console_write_error(const char* error_message, u8 color) {
+    /**
+     * @brief Выводит сообщение об ошибке в stderr с цветом.
+     * @param error_message Строка ошибки.
+     * @param color         Индекс цвета.
+     */
     HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
     static u8 levels[6] = {64, 4, 6, 2, 1, 8};
-
     SetConsoleTextAttribute(console_handle, levels[color]);
     OutputDebugStringA(error_message);
     u64 length = strlen(error_message);
     LPDWORD number_written = nullptr;
-
-    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), error_message, (DWORD)length, number_written, nullptr);
+    WriteConsoleA(console_handle, error_message, (DWORD)length, number_written, nullptr);
 }
-//------------------------------------
-//  Функции для работы со временем
-//------------------------------------
+
+//==============================================================================
+// Функции для работы со временем
+//==============================================================================
+
 f64 platform_get_absolute_time() {
+    /**
+     * @brief Возвращает абсолютное время с высоким разрешением (в секундах).
+     * @return Текущее время в секундах (монотонное).
+     *
+     * Использует QueryPerformanceCounter и сохранённую частоту.
+     */
     LARGE_INTEGER now_time;
     QueryPerformanceCounter(&now_time);
     return (f64)now_time.QuadPart * clock_frequency;
 }
+
 void platform_sleep(u64 ms) {
+    /**
+     * @brief Приостанавливает выполнение потока на заданное количество миллисекунд.
+     * @param ms Время задержки.
+     */
     Sleep(ms);
 }
-//------------------------------------
-//  Вспомагательные функции
-//------------------------------------
+
+//==============================================================================
+// Вспомогательные функции (реализация)
+//==============================================================================
+
 b8 platform_create_window(window_data* w_data, internal_state* i_state) {
-    /*
-     * Настройка и регистрация
-     * класса окна
+    /**
+     * @brief Создаёт окно Windows.
+     * @param w_data Параметры окна.
+     * @param i_state Внутреннее состояние (содержит HINSTANCE).
+     * @return true при успехе, false при ошибке.
+     *
+     * Этапы:
+     * - Регистрация класса окна (WNDCLASSA).
+     * - Создание окна через CreateWindowExA.
+     * - Отображение окна (ShowWindow).
      */
+    // Регистрация класса окна
     HICON icon = LoadIcon(i_state->h_instance, IDI_APPLICATION);
     WNDCLASSA wc;
     memset(&wc, 0, sizeof(wc));
@@ -153,13 +283,13 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = nullptr;
     wc.lpszClassName = "te_window_class";
+
     if (!RegisterClassA(&wc)) {
-        MessageBoxA(nullptr, "Окно неудалось зарегестрировать: file->platform.cpp, func->platform_create_window", "Error", MB_ICONEXCLAMATION | MB_OK);
+        MessageBoxA(nullptr, "Окно не удалось зарегистрировать: file->platform.cpp, func->platform_create_window", "Error", MB_ICONEXCLAMATION | MB_OK);
         return false;
     }
-    /*
-     * создаем окно
-     */
+
+    // Подготовка размеров окна с учётом неклиентской области
     u32 client_x = w_data->x;
     u32 client_y = w_data->y;
     u32 client_width = w_data->width;
@@ -183,81 +313,86 @@ b8 platform_create_window(window_data* w_data, internal_state* i_state) {
     window_width += border_rect.right - border_rect.left;
     window_height += border_rect.bottom - border_rect.top;
 
+    // Создание окна
     HWND handle = CreateWindowExA(
         window_ex_style, "te_window_class", w_data->app_name,
         window_style, window_x, window_y,
         window_width, window_height,
         nullptr, nullptr, i_state->h_instance, nullptr);
-    if (handle == nullptr) {
-        MessageBoxA(nullptr, "Неудалось создать окно!: file->platform.cpp, func->platform_create_window", "Error!", MB_ICONEXCLAMATION | MB_OK);
-        TE_LOG_FATAL("Неудалось создать окно!: file->platform.cpp, func->platform_create_window");
+
+    if (!handle) {
+        MessageBoxA(nullptr, "Не удалось создать окно!: file->platform.cpp, func->platform_create_window", "Error!", MB_ICONEXCLAMATION | MB_OK);
+        TE_LOG_FATAL("Не удалось создать окно!: file->platform.cpp, func->platform_create_window");
         return false;
-    } else {
-        i_state->hwnd = handle;
     }
-    /* Код отображение
-     *  и активацией окна
-     */
-    b32 should_activate = 1;  // TODO: если окно не должно принимать ввод должно быть false
-    // если окно активировано, то показать и активировать, если нет, то показать, но не активировать
+
+    i_state->hwnd = handle;
+
+    // Отображение окна
+    b32 should_activate = 1;  // TODO: сделать настраиваемым
     i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
     ShowWindow(i_state->hwnd, show_window_command_flags);
 
     return true;
-};
+}
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
+    /**
+     * @brief Оконная процедура, обрабатывающая сообщения Windows.
+     * @param hwnd   Дескриптор окна.
+     * @param msg    Идентификатор сообщения.
+     * @param w_param, l_param Дополнительные параметры.
+     * @return Результат обработки (зависит от сообщения).
+     *
+     * Обрабатываемые сообщения:
+     * - WM_ERASEBKGND: предотвращает мерцание фона.
+     * - WM_CLOSE: инициирует событие QUIT и уничтожает окно.
+     * - WM_DESTROY: завершает цикл сообщений (PostQuitMessage).
+     * - WM_SIZE, WM_KEY*, WM_MOUSE*: заготовки для будущей обработки ввода.
+     */
     switch (msg) {
         case WM_ERASEBKGND:
-            // Notify the OS that erasing will be handled by the application to prevent flicker.
-            return 1;
-        case WM_CLOSE:
-            // TODO: Fire an event for the application to quit.
+            return 1;  // Сообщаем, что фон стирать не нужно.
+
+        case WM_CLOSE: {
+            EventContext context = {};
+            event_fire(EVENT_CODE_APPLICATION_QUIT, nullptr, context);
+            DestroyWindow(hwnd);
             return 0;
+        }
+
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
-        case WM_SIZE: {
-            // Get the updated size.
-            // RECT r;
-            // GetClientRect(hwnd, &r);
-            // u32 width = r.right - r.left;
-            // u32 height = r.bottom - r.top;
 
-            // TODO: Fire an event for window resize.
-        } break;
+        case WM_SIZE:
+            // TODO: сгенерировать событие изменения размера окна
+            break;
+
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
-        case WM_SYSKEYUP: {
-            // Key pressed/released
-            // b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
-            // TODO: input processing
+        case WM_SYSKEYUP:
+            // TODO: обработка клавиатуры
+            break;
 
-        } break;
-        case WM_MOUSEMOVE: {
-            // Mouse move
-            // i32 x_position = GET_X_LPARAM(l_param);
-            // i32 y_position = GET_Y_LPARAM(l_param);
-            // TODO: input processing.
-        } break;
-        case WM_MOUSEWHEEL: {
-            // i32 z_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-            // if (z_delta != 0) {
-            //     // Flatten the input to an OS-independent (-1, 1)
-            //     z_delta = (z_delta < 0) ? -1 : 1;
-            //     // TODO: input processing.
-            // }
-        } break;
+        case WM_MOUSEMOVE:
+            // TODO: обработка движения мыши
+            break;
+
+        case WM_MOUSEWHEEL:
+            // TODO: обработка колесика мыши
+            break;
+
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
         case WM_RBUTTONDOWN:
         case WM_LBUTTONUP:
         case WM_MBUTTONUP:
-        case WM_RBUTTONUP: {
-            // b8 pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
-            //  TODO: input processing.
-        } break;
+        case WM_RBUTTONUP:
+            // TODO: обработка кнопок мыши
+            break;
     }
+
     return DefWindowProcA(hwnd, msg, w_param, l_param);
 }

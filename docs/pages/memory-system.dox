@@ -1,0 +1,16 @@
+/**
+ * @page memory_system Подсистема памяти
+ *
+ * Отвечает за учёт всех выделений памяти в движке.
+ *
+ * ## Основные функции
+ * - `te_memory_allocate` – выделение блока с тегом
+ * - `te_memory_free` – освобождение
+ * - `te_memory_zero` / `te_memory_copy` / `te_memory_move` – работа с памятью
+ *
+ * ## Теги памяти
+ * @see MemoryTag
+ *
+ * ## Статистика
+ * При включённом макросе `TE_MEMORY_STATS_ENABLED` можно получить отчёт через `get_memory_usage_str()`.
+ */
