@@ -53,8 +53,23 @@ class TE_API Application {
   * @return true, если цикл завершился успешно (по запросу выхода), false при ошибке.
   */
   b8 run();
+  
+  /**
+ * @brief Проверяет, успешно ли проинициализировано приложение.
+ * @return true, если конструктор отработал без ошибок, иначе false.
+ */
+b8 is_initialized() const { return app_state != nullptr; }
 
   private:
+  /**
+ * @brief Обработчик событий клавиатуры (нажатие/отпускание).
+ * @param code Код события (EVENT_CODE_KEY_PRESSED или EVENT_CODE_KEY_RELEASED).
+ * @param sender Отправитель события (не используется).
+ * @param listener Указатель на экземпляр Application (передаётся при регистрации).
+ * @param context Контекст события, содержащий код клавиши.
+ * @return true, если событие обработано (например, при Escape), иначе false.
+ */
+b8 application_on_key(u16 code, void* sender, void* listener, EventContext context);
   /**
   * @brief Обработчик события выхода из приложения.
   * @param code Код события (должен быть EVENT_CODE_APPLICATION_QUIT).
