@@ -7,7 +7,7 @@
  * выполняются через подсистему te_memory.
  */
 
-#include <core/darray.hpp>
+#include <containers/darray.hpp>
 #include <core/te_memory.hpp>
 #include <core/logger.hpp>
 
@@ -41,7 +41,7 @@ void* _darray_create(u64 capacity, u64 stride) {
      */
     u64 header_size = HEADER_SIZE();
     u64 array_size = capacity * stride;
-    u64* new_array = te_memory_allocate(header_size + array_size, MEMORY_TAG_DARRAY);
+    u64* new_array = static_cast<u64*>(te_memory_allocate(header_size + array_size, MEMORY_TAG_DARRAY));
     if (!new_array) return nullptr;
 
     te_memory_zero(new_array, header_size + array_size);
@@ -151,7 +151,7 @@ void* _darray_push(void* array, const void* value_ptr) {
 
     if (length + 1 == darray_capacity(array)) {
         array = _darray_resize(array);
-        length = darray_length(array); // обновить длину после ресайза (на всякий случай)
+        length = darray_length(array);  // обновить длину после ресайза (на всякий случай)
     }
 
     u64 addr = (u64)array + (length * stride);
@@ -244,7 +244,7 @@ void* _darray_insert_at(void* array, u64 index, void* value_ptr) {
 
     if (length + 1 == darray_capacity(array)) {
         array = _darray_resize(array);
-        length = darray_length(array); // обновить после ресайза
+        length = darray_length(array);  // обновить после ресайза
     }
 
     u64 addr = (u64)array;

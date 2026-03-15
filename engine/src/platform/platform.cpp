@@ -351,120 +351,111 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
      * - WM_DESTROY: завершает цикл сообщений (PostQuitMessage).
      * - WM_SIZE, WM_KEY*, WM_MOUSE*: заготовки для будущей обработки ввода.
      */
- switch (msg) 
- {
-//------------------------------------------------------------------------------
-// Обработка действий окна 
-//------------------------------------------------------------------------------ 
-  case WM_ERASEBKGND:
-    return 1;  // Сообщаем, что фон стирать не нужно.
+    switch (msg) {
+            //------------------------------------------------------------------------------
+            // Обработка действий окна
+            //------------------------------------------------------------------------------
+        case WM_ERASEBKGND:
+            return 1;  // Сообщаем, что фон стирать не нужно.
 
-  case WM_CLOSE: 
-  {
-    EventContext context = {};
-    event_fire(EVENT_CODE_APPLICATION_QUIT, nullptr, context);
-    DestroyWindow(hwnd);
-    return 0;
-  }
+        case WM_CLOSE: {
+            EventContext context = {};
+            event_fire(EVENT_CODE_APPLICATION_QUIT, nullptr, context);
+            DestroyWindow(hwnd);
+            return 0;
+        }
 
-  case WM_DESTROY:
-  {
-    PostQuitMessage(0);
-    return 0;
-  }
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+            return 0;
+        }
 
-  case WM_SIZE:
-  {
-    // TODO: сгенерировать событие изменения размера окна
-  }break;
+        case WM_SIZE: {
+            // TODO: сгенерировать событие изменения размера окна
+        } break;
 
-//------------------------------------------------------------------------------
-// Обработка кнопок клавиатуры 
-//------------------------------------------------------------------------------
-  case WM_KEYDOWN:
-  case WM_SYSKEYDOWN:
-  case WM_KEYUP:
-  case WM_SYSKEYUP: 
-  {
-    // Определяем, было ли это нажатие или отпускание
-    b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+            //------------------------------------------------------------------------------
+            // Обработка кнопок клавиатуры
+            //------------------------------------------------------------------------------
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP: {
+            // Определяем, было ли это нажатие или отпускание
+            b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
 
-    // Извлекаем код клавиши (wParam содержит виртуальный код)
-    u16 key_code = (u16)w_param;
+            // Извлекаем код клавиши (wParam содержит виртуальный код)
+            u16 key_code = (u16)w_param;
 
-    // Отладочный вывод (только в debug-сборке)
-    #ifdef _DEBUG
-    TE_LOG_DEBUG("Клавиша %s: код %d: file->platform.cpp, func->win32_process_message",
-                 pressed ? "нажата" : "отпущена", key_code);
-    #endif
+// Отладочный вывод (только в debug-сборке)
+#ifdef _DEBUG
+            TE_LOG_DEBUG("Клавиша %s: код %d: file->platform.cpp, func->win32_process_message",
+                         pressed ? "нажата" : "отпущена", key_code);
+#endif
 
-    // Передаём событие в систему ввода
-    input_process_key((KeyCode)key_code, pressed);
-    break;
-}
-//------------------------------------------------------------------------------
-// Обработка движения мыши и прокрутки колеса 
-//------------------------------------------------------------------------------
-  case WM_MOUSEMOVE: 
-  {
-    // Извлекаем координаты мыши из lParam
-    i32 x = GET_X_LPARAM(l_param);
-    i32 y = GET_Y_LPARAM(l_param);
+            // Передаём событие в систему ввода
+            input_process_key((KeyCode)key_code, pressed);
+            break;
+        }
+            //------------------------------------------------------------------------------
+            // Обработка движения мыши и прокрутки колеса
+            //------------------------------------------------------------------------------
+        case WM_MOUSEMOVE: {
+            // Извлекаем координаты мыши из lParam
+            i32 x = GET_X_LPARAM(l_param);
+            i32 y = GET_Y_LPARAM(l_param);
 
-    // Передаём их в систему ввода
-    input_process_mouse_move((i16)x, (i16)y);
-    break;
-  } 
+            // Передаём их в систему ввода
+            input_process_mouse_move((i16)x, (i16)y);
+            break;
+        }
 
-  case WM_MOUSEWHEEL: 
-  {
-    // Получаем сырую дельту (обычно ±120)
-    i32 raw_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-    
-    // Игнорируем нулевые значения (на всякий случай)
-    if (raw_delta != 0) 
-    {
-      // Упрощаем до ±1
-      i8 flattened = (raw_delta > 0) ? 1 : -1;
-      // Передаём в систему ввода
-      input_process_mouse_wheel(flattened);
+        case WM_MOUSEWHEEL: {
+            // Получаем сырую дельту (обычно ±120)
+            i32 raw_delta = GET_WHEEL_DELTA_WPARAM(w_param);
+
+            // Игнорируем нулевые значения (на всякий случай)
+            if (raw_delta != 0) {
+                // Упрощаем до ±1
+                i8 flattened = (raw_delta > 0) ? 1 : -1;
+                // Передаём в систему ввода
+                input_process_mouse_wheel(flattened);
+            }
+            break;
+        }
+
+        //------------------------------------------------------------------------------
+        // Обработка кнопок мыши (левая, правая, средняя)
+        //------------------------------------------------------------------------------
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP: {
+            // Определяем, было ли это нажатием (true) или отпусканием (false)
+            b8 pressed = (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN);
+
+            // Определяем, какая именно кнопка сработала
+            MouseButton button = MOUSE_BUTTON_MAX;
+            if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
+                button = MOUSE_BUTTON_LEFT;
+            } else if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP) {
+                button = MOUSE_BUTTON_RIGHT;
+            } else {  // WM_MBUTTONDOWN или WM_MBUTTONUP
+                button = MOUSE_BUTTON_MIDDLE;
+            }
+
+            // Передаём событие в систему ввода (она сама проверит изменение и сгенерирует событие)
+            if (button != MOUSE_BUTTON_MAX) {
+                input_process_button(button, pressed);
+            }
+            break;
+        }
     }
-    break;
-}
+    //------------------------------------------------------------------------------
+    // конец обработки кодов сообщений
+    //------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-// Обработка кнопок мыши (левая, правая, средняя)
-//------------------------------------------------------------------------------
-case WM_LBUTTONDOWN:
-case WM_LBUTTONUP:
-case WM_RBUTTONDOWN:
-case WM_RBUTTONUP:
-case WM_MBUTTONDOWN:
-case WM_MBUTTONUP:
-{
-    // Определяем, было ли это нажатием (true) или отпусканием (false)
-    b8 pressed = (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN);
-
-    // Определяем, какая именно кнопка сработала
-    MouseButton button = MOUSE_BUTTON_MAX;
-    if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) {
-        button = MOUSE_BUTTON_LEFT;
-    } else if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP) {
-        button = MOUSE_BUTTON_RIGHT;
-    } else { // WM_MBUTTONDOWN или WM_MBUTTONUP
-        button = MOUSE_BUTTON_MIDDLE;
-    }
-
-    // Передаём событие в систему ввода (она сама проверит изменение и сгенерирует событие)
-    if(button != MOUSE_BUTTON_MAX)
-    {
-      input_process_button(button, pressed);
-    }
-    break;
-}
-//------------------------------------------------------------------------------
-// конец обработки кодов сообщений 
-//------------------------------------------------------------------------------
-
-return DefWindowProcA(hwnd, msg, w_param, l_param);
-}
+    return DefWindowProcA(hwnd, msg, w_param, l_param);
+};

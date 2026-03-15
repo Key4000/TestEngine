@@ -14,19 +14,20 @@
 #include <core/input.hpp>
 #include <platform/platform.hpp>
 #include <string.h>
+#include <cstdio>
 
 //==============================================================================
 // Внутренняя структура состояния
 //==============================================================================
 
 struct Application::ApplicationState {
-    Game* game_inst;      ///< Указатель на игровой интерфейс
-    b8 is_running;        ///< Флаг работы главного цикла
-    b8 is_suspended;      ///< Флаг приостановки (окно свёрнуто)
-    platform_state platform; ///< Состояние платформы
-    i16 width;            ///< Текущая ширина окна
-    i16 height;           ///< Текущая высота окна
-    f64 last_time;        ///< Время предыдущего кадра (для расчёта дельты)
+    Game* game_inst;          ///< Указатель на игровой интерфейс
+    b8 is_running;            ///< Флаг работы главного цикла
+    b8 is_suspended;          ///< Флаг приостановки (окно свёрнуто)
+    platform_state platform;  ///< Состояние платформы
+    i16 width;                ///< Текущая ширина окна
+    i16 height;               ///< Текущая высота окна
+    f64 last_time;            ///< Время предыдущего кадра (для расчёта дельты)
 };
 
 //==============================================================================
@@ -35,10 +36,10 @@ struct Application::ApplicationState {
 
 Application::Application(Game* game) {
     /*
-    *------------------------------
-    *  инициализация подсистем 
-    *------------------------------
-    */
+     *------------------------------
+     *  инициализация подсистем
+     *------------------------------
+     */
     // Логгер – инициализируется самым первым, чтобы можно было логировать ошибки
     if (!log_init()) {
         // Если логгер не работает, используем printf для критического сообщения
@@ -46,24 +47,23 @@ Application::Application(Game* game) {
         app_state = nullptr;
         return;
     }
-    //Система памяти
-    memory_system_init();  
-    //Система событий
+    // Система памяти
+    memory_system_init();
+    // Система событий
     if (!event_init()) {
         TE_LOG_FATAL("Не удалось инициализировать систему событий: file->application.cpp, func->Application::Application");
         app_state = nullptr;
         return;
     }
-    //Система ввода (переименована в input_init)
+    // Система ввода (переименована в input_init)
     input_init();  // тоже пока без возврата кода
     /*
-    *------------------------------
-    * Выделение памяти под состояние приложения(а так же окно)
-    *------------------------------
-    */
+     *------------------------------
+     * Выделение памяти под состояние приложения(а так же окно)
+     *------------------------------
+     */
     app_state = static_cast<ApplicationState*>(
-        te_memory_allocate(sizeof(ApplicationState), MEMORY_TAG_APPLICATION)
-    );
+        te_memory_allocate(sizeof(ApplicationState), MEMORY_TAG_APPLICATION));
     if (!app_state) {
         TE_LOG_FATAL("Не удалось выделить память для состояния приложения: file->application.cpp, func->Application::Application");
         app_state = nullptr;
@@ -71,10 +71,10 @@ Application::Application(Game* game) {
     }
     app_state->game_inst = game;
     /*
-    *------------------------------
-    * Подготовка данных для создания окна и создание окна 
-    *------------------------------
-    */ 
+     *------------------------------
+     * Подготовка данных для создания окна и создание окна
+     *------------------------------
+     */
     window_data w_data;
     w_data.x = game->app_config.start_pos_x;
     w_data.y = game->app_config.start_pos_y;
@@ -82,7 +82,7 @@ Application::Application(Game* game) {
     w_data.height = game->app_config.start_height;
     w_data.app_name = game->app_config.name;
 
-    //Инициализация платформенного слоя (создание окна)
+    // Инициализация платформенного слоя (создание окна)
     if (!platform_init(&app_state->platform, &w_data)) {
         TE_LOG_FATAL("Не удалось инициализировать платформенный слой: file->application.cpp, func->Application::Application");
         te_memory_free(app_state, sizeof(ApplicationState), MEMORY_TAG_APPLICATION);
@@ -90,26 +90,26 @@ Application::Application(Game* game) {
         return;
     }
     /*
-    *---------------------------------
-    * регистрация обработчиков событий
-    *---------------------------------
-    */
-    //Событие выхода(QUIT)
+     *---------------------------------
+     * регистрация обработчиков событий
+     *---------------------------------
+     */
+    // Событие выхода(QUIT)
     if (!event_register(EVENT_CODE_APPLICATION_QUIT, this, application_on_quit)) {
         TE_LOG_WARN("Не удалось зарегистрировать обработчик QUIT: file->application.cpp, func->Application::Application");
     }
-    //Клавиатура
+    // Клавиатура
     if (!event_register(EVENT_CODE_KEY_PRESSED, this, application_on_key)) {
-    TE_LOG_WARN("Не удалось зарегистрировать обработчик KEY_PRESSED: file->application.cpp, func->Application::Application");
-}
+        TE_LOG_WARN("Не удалось зарегистрировать обработчик KEY_PRESSED: file->application.cpp, func->Application::Application");
+    }
     if (!event_register(EVENT_CODE_KEY_RELEASED, this, application_on_key)) {
-    TE_LOG_WARN("Не удалось зарегистрировать обработчик KEY_RELEASED: file->application.cpp, func->Application::Application");
-}
+        TE_LOG_WARN("Не удалось зарегистрировать обработчик KEY_RELEASED: file->application.cpp, func->Application::Application");
+    }
     /*
-    *---------------------------------
-    * Инициализация игры
-    *---------------------------------
-    */
+     *---------------------------------
+     * Инициализация игры
+     *---------------------------------
+     */
     if (!app_state->game_inst->initialize(app_state->game_inst)) {
         TE_LOG_FATAL("Не удалось инициализировать игру: file->application.cpp, func->Application::Application");
         platform_shutdown(&app_state->platform);
@@ -118,10 +118,10 @@ Application::Application(Game* game) {
         return;
     }
     /*
-    *---------------------------------
-    * Сохранение параметров окна и запуск таймера
-    *---------------------------------
-    */
+     *---------------------------------
+     * Сохранение параметров окна и запуск таймера
+     *---------------------------------
+     */
     app_state->width = w_data.width;
     app_state->height = w_data.height;
     app_state->last_time = platform_get_absolute_time();
@@ -149,9 +149,9 @@ Application::~Application() {
         te_memory_free(app_state, sizeof(ApplicationState), MEMORY_TAG_APPLICATION);
 
         // Завершение работы подсистем (порядок обратный инициализации)
-        input_shutdown();      // ввод
-        event_shutdown();      // события
-        memory_system_shutdown(); // память
+        input_shutdown();          // ввод
+        event_shutdown();          // события
+        memory_system_shutdown();  // память
         // log_shutdown() – не обязателен, но можно добавить
     }
 }
@@ -243,7 +243,7 @@ b8 Application::application_on_key(u16 code, void* sender, void* listener, Event
                 TE_LOG_INFO("Обнаружено нажатие Escape, отправляем событие QUIT: file->application.cpp, func->application_on_key");
                 EventContext quit_context = {};
                 event_fire(EVENT_CODE_APPLICATION_QUIT, nullptr, quit_context);
-                return true; // событие обработано
+                return true;  // событие обработано
             }
             break;
 
@@ -252,7 +252,7 @@ b8 Application::application_on_key(u16 code, void* sender, void* listener, Event
             break;
 
         default:
-            return false; // не обработано
+            return false;  // не обработано
     }
 
     // Возвращаем false, чтобы событие могло быть обработано другими подписчиками

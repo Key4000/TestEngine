@@ -7,11 +7,11 @@
  * Проверки на выход за пределы массивов опущены для максимальной производительности.
  */
 
-#include <core/input.hpp>      // Наш заголовок с объявлениями
-#include <platform/platform.hpp> // Для platform_zero_memory
-#include <core/logger.hpp>       // Для логирования
-#include <core/event.hpp>        // Для генерации событий
-#include <string.h>              // Для memcpy (не используется напрямую)
+#include <core/input.hpp>         // Наш заголовок с объявлениями
+#include <platform/platform.hpp>  // Для platform_zero_memory
+#include <core/logger.hpp>        // Для логирования
+#include <core/event.hpp>         // Для генерации событий
+#include <string.h>               // Для memcpy (не используется напрямую)
 
 //==============================================================================
 // Внутренние структуры (скрыты от внешнего мира)
@@ -23,7 +23,7 @@
  * Хранит массив флагов для всех возможных клавиш.
  */
 typedef struct keyboard_state {
-    b8 keys[KEY_MAX];           /**< true – клавиша нажата, false – отпущена */
+    b8 keys[KEY_MAX]; /**< true – клавиша нажата, false – отпущена */
 } keyboard_state;
 
 /**
@@ -32,7 +32,7 @@ typedef struct keyboard_state {
  * Содержит текущие координаты и массив флагов кнопок.
  */
 typedef struct mouse_state {
-    i16 x, y;                   /**< Текущие координаты мыши (относительно окна) */
+    i16 x, y;                     /**< Текущие координаты мыши (относительно окна) */
     b8 buttons[MOUSE_BUTTON_MAX]; /**< true – кнопка нажата, false – отпущена */
 } mouse_state;
 
@@ -43,10 +43,10 @@ typedef struct mouse_state {
  * Позволяет определять нажатия/отпускания путём сравнения.
  */
 typedef struct input_state {
-    keyboard_state keyboard_current;   /**< Текущее состояние клавиатуры */
-    keyboard_state keyboard_previous;  /**< Состояние клавиатуры в предыдущем кадре */
-    mouse_state mouse_current;         /**< Текущее состояние мыши */
-    mouse_state mouse_previous;        /**< Состояние мыши в предыдущем кадре */
+    keyboard_state keyboard_current;  /**< Текущее состояние клавиатуры */
+    keyboard_state keyboard_previous; /**< Состояние клавиатуры в предыдущем кадре */
+    mouse_state mouse_current;        /**< Текущее состояние мыши */
+    mouse_state mouse_previous;       /**< Состояние мыши в предыдущем кадре */
 } input_state;
 
 //==============================================================================
@@ -61,7 +61,7 @@ static b8 is_initialized = false;
 /**
  * @brief Главная структура состояния ввода.
  */
-static input_state state = {0};
+static input_state state = {};
 
 //==============================================================================
 // Инициализация и завершение
@@ -104,7 +104,7 @@ void input_update(f64 delta_time) {
     // Копируем текущее состояние мыши (координаты и кнопки) в предыдущее
     state.mouse_previous = state.mouse_current;
 
-    (void)delta_time; // параметр пока не используется
+    (void)delta_time;  // параметр пока не используется
 }
 
 //==============================================================================
